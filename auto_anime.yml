@@ -1,0 +1,51 @@
+name: Weekly Detective Conan Automation
+
+on:
+  schedule:
+    - cron: "30 13 * * 6"  # 7:30 AM Central Time, Saturday
+  workflow_dispatch:
+    inputs:
+      episode_number:
+        description: "Episode number to process (optional)"
+        required: false
+        default: ""
+      magnet_link:
+        description: "Magnet link to download (optional)"
+        required: false
+        default: ""
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y aria2 ffmpeg
+          pip install requests beautifulsoup4
+
+      - name: Run Conan Automation
+        env:
+          DOODSTREAM_API_KEY: 554366xrjxeza9m7e4m02v
+          EPISODE_NUMBER: ${{ github.event.inputs.episode_number }}
+          MAGNET_LINK: ${{ github.event.inputs.magnet_link }}
+        run: |
+          python conan_automation_github.py
+
+      - name: Commit and Push index.html
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add index.html
+          git commit -m "Auto-update website with latest episode links" || echo "No changes"
+          git push
